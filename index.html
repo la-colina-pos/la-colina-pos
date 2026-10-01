@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La Colina POS v0.6.2 · Facturación electrónica</title>
+<style>
+:root{--bg:#f3f5f7;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--dark:#111827;--ok:#15803d;--warn:#b45309;--bad:#b91c1c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+.app{max-width:1180px;margin:auto;padding:16px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.brand{font-size:23px;font-weight:850}.sub{font-size:12px;color:var(--muted)}
+.nav{display:flex;gap:7px;overflow:auto;margin-bottom:14px}.nav button{white-space:nowrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-weight:750}.nav button.active{background:var(--dark);color:#fff}
+.view.hidden{display:none}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;box-shadow:0 3px 14px #00000007}.label{font-size:12px;color:var(--muted)}.value{font-size:22px;font-weight:850;margin-top:4px}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.layout{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.products{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.product{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;text-align:left}.product b{display:block}.product span{font-size:12px;color:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}.cartrow{display:grid;grid-template-columns:1fr auto auto;gap:7px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0}.qty{display:flex;gap:4px;align-items:center}.qty button{padding:5px 8px}.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:750;cursor:pointer}.dark{background:var(--dark);color:#fff}.ghost{background:#fff;border:1px solid var(--line)}.danger{background:#fee2e2;color:var(--bad)}.pay{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:9px 0}.pay button.sel{background:var(--dark);color:#fff}
+.form{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:11px;color:var(--muted);font-weight:750}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;font:inherit}.field textarea{min-height:75px;resize:vertical}
+.toolbar{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.section{margin-top:12px}.section h2{font-size:16px;margin:0 0 9px}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid var(--line);font-size:12px;text-align:left}th{color:var(--muted);font-size:10px;text-transform:uppercase}
+.ticketWrap{display:grid;grid-template-columns:1fr 300px;gap:14px}.builder{display:flex;flex-direction:column;gap:7px}.block{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px}.blocktop{display:flex;justify-content:space-between;align-items:center}.previewBox{background:#e9edf0;padding:18px;border-radius:14px;display:flex;justify-content:center}.ticket{width:250px;background:#fff;padding:13px 11px;font-family:monospace;font-size:11px;box-shadow:0 2px 10px #0002;white-space:pre-wrap;word-break:break-word}.ticket .center{text-align:center}.ticket .right{text-align:right}.ticket .big{font-size:16px;font-weight:bold}.check{display:flex;gap:7px;align-items:center;font-size:12px}
+.small{font-size:11px;color:var(--muted)}.nav-organizer{display:flex;flex-direction:column;gap:7px}.nav-item{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px}.nav-item b{font-size:12px}.nav-item .nav-arrows{display:flex;gap:5px}.nav-item .nav-arrows button{min-width:38px}.pill{display:inline-block;background:#eef2f7;border-radius:99px;padding:4px 8px;font-size:10px;font-weight:750}
+@media(max-width:800px){.grid4{grid-template-columns:repeat(2,1fr)}.layout,.ticketWrap{grid-template-columns:1fr}.products{grid-template-columns:repeat(2,1fr)}.form{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.app{padding:10px}.grid4{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.products{grid-template-columns:1fr 1fr}}
+
+.fe-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:12px}.fe-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.fe-status{background:#fff7ed;color:#b45309;border:1px solid #fed7aa;border-radius:99px;padding:7px 10px;font-size:11px;font-weight:800;white-space:nowrap}.fe-total-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.fe-total{display:flex;justify-content:space-between;align-items:center;padding-top:13px;font-size:14px}.fe-total strong{font-size:25px}.fe-info{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:12px;padding:11px;font-size:12px;line-height:1.45}.fe-state{padding:12px;border-radius:12px;background:#f8fafc;border:1px solid var(--line);font-size:12px}.fe-table{width:100%;border-collapse:collapse}.fe-table th,.fe-table td{padding:8px;border-bottom:1px solid var(--line);font-size:12px}.fe-table th{color:var(--muted);font-size:10px;text-transform:uppercase}.fe-badge{display:inline-block;padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800;background:#dcfce7;color:#166534}.fe-item{display:grid;grid-template-columns:1fr 90px 110px 110px 35px;gap:7px;align-items:center;border-bottom:1px solid var(--line);padding:8px 0}.fe-item input,.fe-item select{border:1px solid var(--line);border-radius:9px;padding:8px;background:#fff;font:inherit}.fe-item .fe-price,.fe-item .fe-line{text-align:right}.fe-mini{font-size:11px;color:var(--muted)}
+@media(max-width:800px){.fe-grid{grid-template-columns:1fr}.fe-item{grid-template-columns:1fr 80px 100px 100px 32px}.fe-head{align-items:flex-start;flex-direction:column}}
+
+</style>
+</head>
+<body>
+<div class="app">
+<div class="top">
+  <div><div class="brand">La Colina</div><div class="sub">POS v0.6.5 Beta · control operativo + facturación electrónica</div></div>
+  <div class="toolbar" style="margin:0"><button class="btn ghost" onclick="exportBackup()">💾 Respaldo</button></div>
+</div>
+
+<div class="nav">
+<button class="active" onclick="tab('inicio',this)" data-nav-id="inicio">Inicio</button>
+<button onclick="tab('venta',this)" data-nav-id="venta">Nueva venta</button>
+<button onclick="tab('compras',this)" data-nav-id="compras">Compras</button>
+<button onclick="tab('mov',this)" data-nav-id="mov">Histórico</button>
+<button onclick="tab('fact',this)" data-nav-id="fact">Facturación electrónica</button>
+<button onclick="tab('ticket',this)" data-nav-id="ticket">Diseñar ticket</button>
+<button onclick="tab('config',this)" data-nav-id="config">Configuración</button>
+</div>
+
+<section id="inicio" class="view">
+<div id="cards" class="grid4"></div>
+<div class="section card">
+<h2>Control de fondos</h2>
+<div class="sub">La Base nunca se suma a Caja. El saldo pendiente de tarjeta se conserva aparte y no se considera dinero disponible hasta su confirmación.</div>
+<div id="funds" style="margin-top:12px"></div>
+</div>
+</section>
+
+<section id="venta" class="view hidden">
+<div class="layout">
+<div class="card"><h2>Productos</h2><div id="products" class="products"></div></div>
+<div class="card">
+<h2>Venta actual</h2><div id="cart"></div>
+<div class="row" style="margin-top:12px"><b>Total</b><strong id="total" style="font-size:21px">$0</strong></div>
+<div class="pay">
+<button class="btn ghost" onclick="setPay('Efectivo',this)">Efectivo</button>
+<button class="btn ghost" onclick="setPay('Nequi',this)">Nequi</button>
+<button class="btn ghost" onclick="setPay('Tarjeta',this)">Tarjeta</button>
+</div>
+<div class="small">Pago dividido</div>
+<div class="form" style="grid-template-columns:1fr 1fr;margin-top:6px">
+<div class="field"><label>Efectivo</label><input id="splitCash" type="number" value="0" min="0"></div>
+<div class="field"><label>Nequi</label><input id="splitNequi" type="number" value="0" min="0"></div>
+<div class="field"><label>Tarjeta</label><input id="splitCard" type="number" value="0" min="0"></div>
+</div>
+<div class="toolbar"><button class="btn ghost" onclick="clearSplit()">Limpiar dividido</button></div>
+<button class="btn dark" style="width:100%" onclick="window.charge()">Cobrar venta</button>
+<button class="btn ghost" style="width:100%;margin-top:7px" onclick="clearCart()">Nueva venta</button>
+</div>
+</div>
+</section>
+
+<section id="compras" class="view hidden">
+<div class="card"><h2>Nueva compra / gasto</h2>
+<div class="form">
+<div class="field"><label>Concepto</label><input id="buyName" placeholder="Ej. Pan"></div>
+<div class="field"><label>Valor</label><input id="buyValue" type="number" min="0" placeholder="Valor de la compra"></div>
+<div class="field"><label>Fuente</label><select id="buySource"><option>Caja</option><option>Disponible</option><option>Nequi</option><option>Base</option><option>Tarjeta</option></select></div>
+<div class="field"><label>Fecha de la compra</label><input id="buyDate" type="date"></div>
+</div>
+<button class="btn dark" style="margin-top:10px" onclick="addPurchase()">Registrar</button>
+<p class="small">Las opciones de fuente quedan fijadas: Caja · Disponible · Nequi · Base · Tarjeta.</p>
+</div>
+</section>
+
+
+<section id="fact" class="view hidden">
+<div class="fe-head card">
+  <div><h2 style="margin:0">Facturación Electrónica</h2><div class="small">Diseñada sobre el mismo estilo de La Colina. Esta beta prepara el flujo; la conexión real con DIAN/proveedor se activará en la capa de facturación.</div></div>
+  <span class="fe-status">● Modo preparación</span>
+</div>
+<div class="fe-grid">
+  <div>
+    <div class="card section">
+      <div class="row"><h2>1. Datos del cliente</h2><div class="toolbar" style="margin:0"><button class="btn ghost" onclick="feFindClient()">🔎 Buscar</button><button class="btn ghost" onclick="feClearClient()">＋ Nuevo cliente</button></div></div>
+      <div class="form">
+        <div class="field"><label>Tipo de documento</label><select id="feDocType"><option>CC</option><option>NIT</option><option>CE</option><option>Pasaporte</option><option>Consumidor final</option></select></div>
+        <div class="field"><label>Número de documento</label><input id="feDoc" placeholder="Documento / NIT"></div>
+        <div class="field"><label>Nombre / Razón social</label><input id="feName" placeholder="Nombre del cliente"></div>
+        <div class="field"><label>Correo electrónico</label><input id="feEmail" type="email" placeholder="cliente@correo.com"></div>
+        <div class="field"><label>Teléfono</label><input id="fePhone" placeholder="Opcional"></div>
+        <div class="field"><label>Dirección</label><input id="feAddress" placeholder="Opcional"></div>
+      </div>
+      <label class="check" style="margin-top:9px"><input id="feSendEmail" type="checkbox" checked> Enviar factura al correo del cliente cuando esté validada</label>
+    </div>
+
+    <div class="card section">
+      <div class="row"><h2>2. Productos / Servicios</h2><button class="btn ghost" onclick="feLoadCart()">Cargar venta actual</button></div>
+      <div class="toolbar"><button class="btn ghost" onclick="feAddItem()">＋ Agregar producto</button><span class="pill">Los precios salen del catálogo de La Colina</span></div>
+      <div id="feItems"></div>
+      <div class="form" style="margin-top:10px">
+        <div class="field"><label>Forma de pago</label><select id="fePay"><option>Efectivo</option><option>Nequi</option><option>Tarjeta</option><option>Mixto</option></select></div>
+        <div class="field"><label>Observaciones</label><input id="feNote" placeholder="Opcional"></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card section">
+      <h2>3. Impuestos y totales</h2>
+      <div class="fe-total-row"><span>Subtotal</span><b id="feSubtotal">$0</b></div>
+      <div class="fe-total-row"><span>Descuento</span><b id="feDiscount">$0</b></div>
+      <div class="fe-total-row"><span>IVA</span><b id="feTax">$0</b></div>
+      <div class="fe-total"><span>Total factura</span><strong id="feTotal">$0</strong></div>
+      <div class="small" style="margin-top:8px">El cálculo de impuestos quedará parametrizable por producto cuando activemos la facturación tributaria real.</div>
+    </div>
+
+    <div class="card section">
+      <h2>4. Generar y validar</h2>
+      <div class="fe-info"><b>Flujo previsto</b><br>Crear factura → enviar a validación → recibir estado → guardar XML/CUFE → entregar representación gráfica.</div>
+      <button class="btn dark" style="width:100%;margin-top:10px" onclick="feGenerate()">▣ Generar factura electrónica</button>
+      <button class="btn ghost" style="width:100%;margin-top:7px" onclick="fePreview()">👁 Vista previa</button>
+    </div>
+
+    <div class="card section">
+      <h2>Estado de la factura</h2>
+      <div id="feCurrentStatus" class="fe-state">Aún no se ha generado una factura.</div>
+    </div>
+  </div>
+</div>
+
+<div class="card section">
+  <div class="row"><h2>Historial de facturas</h2><button class="btn ghost" onclick="feClearHistoryFilter()">Ver todas</button></div>
+  <div id="feHistory"></div>
+</div>
+</section>
+
+<section id="mov" class="view hidden">
+<div class="card"><div class="row"><h2>Movimientos</h2><button class="btn danger" onclick="undo()">Deshacer último</button></div><div id="table"></div></div>
+</section>
+
+<section id="ticket" class="view hidden">
+<div class="card">
+<h2>Diseñador de ticket · 58 mm</h2>
+<p class="small">La impresora DigitalPOS DIG-ISH58 que tienes utiliza papel de 58 mm y ofrece interfaz USB + cajón monedero; el fabricante indica 48 mm de ancho de impresión y ESC/POS.</p>
+<div class="ticketWrap">
+<div>
+<div class="builder" id="builder"></div>
+<div class="toolbar"><button class="btn dark" onclick="saveTicket()">Guardar diseño</button><button class="btn ghost" onclick="testTicket()">Vista de prueba</button></div>
+</div>
+<div class="previewBox"><div id="preview" class="ticket"></div></div>
+</div>
+</div>
+</section>
+
+<section id="config" class="view hidden">
+<div class="card"><h2>Configuración y respaldo</h2>
+<div class="form">
+<div class="field"><label>Nombre del negocio</label><input id="bizName"></div>
+<div class="field"><label>Impresora</label><input id="printerName" placeholder="DigitalPOS DIG-ISH58"></div>
+<div class="field"><label>Ancho</label><select id="paper"><option>58 mm</option><option>80 mm</option></select></div>
+<div class="field"><label>Abrir cajón con</label><select id="drawer"><option>Solo efectivo</option><option>Todas las ventas</option><option>Nunca automáticamente</option></select></div>
+</div>
+<div class="toolbar"><button class="btn dark" onclick="saveConfig()">Guardar configuración</button><button class="btn ghost" onclick="exportBackup()">Exportar respaldo</button><button class="btn ghost" onclick="document.getElementById('file').click()">Importar respaldo</button><input id="file" type="file" accept=".json" hidden onchange="importBackup(event)"><button class="btn danger" onclick="resetAll()">Restablecer demo</button></div>
+<div class="section card" style="margin-top:12px"><h2>Orden de las pestañas</h2><div class="small">Puedes cambiar el orden de las pestañas del POS. El orden queda guardado en este equipo y también se refleja en la próxima apertura.</div><div id="navOrganizer" class="nav-organizer" style="margin-top:10px"></div></div>
+<p class="small">La integración física de impresión/apertura de cajón se activará en la versión Windows nativa. Esta beta conserva la configuración y genera el ticket lógico para la futura capa ESC/POS.</p>
+</div>
+</section>
+</div>
+
+<script>
+const KEY="la_colina_pos_v03";
+const initial={
+version:6,
+funds:{Caja:0,Disponible:0,Nequi:0,Base:0,Tarjeta:0},
+pendingCard:0,
+cart:[],pay:"Efectivo",movements:[],
+config:{biz:"La Colina",printer:"DigitalPOS DIG-ISH58",paper:"58 mm",drawer:"Solo efectivo"},
+ticket:{
+showLogo:false,biz:true,address:false,phone:false,date:true,number:true,seller:false,
+items:true,subtotal:true,discount:true,total:true,payment:true,received:true,change:true,qr:false,message:true,
+messageText:"¡Gracias por su compra!"
+}};
+let s=JSON.parse(localStorage.getItem(KEY)||"null")||initial;
+const products=[
+{id:1,n:"Sándwich de pavo",p:12000},{id:2,n:"Sándwich de pernil",p:13000},
+{id:3,n:"Sándwich de jamón",p:11000},{id:4,n:"Sándwich especial",p:15000},{id:5,n:"Bebida",p:4000},{id:6,n:"Producto personalizado",p:0}
+];
+function save(){localStorage.setItem(KEY,JSON.stringify(s));render()}
+function money(n){return "$"+Math.round(n).toLocaleString("es-CO")}
+function tab(id,b){document.querySelectorAll(".view").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}
+function render(){
+cards(); productsUI(); cartUI(); movementsUI(); ticketUI(); configUI()
+}
+function cards(){
+let f=s.funds;
+document.getElementById("cards").innerHTML=["Caja","Disponible","Nequi","Tarjeta","Base"].map(k=>`<div class="card"><div class="label">${k}</div><div class="value ${k==="Base"?"warn":""}">${money(f[k])}</div></div>`).join("")+
+`<div class="card"><div class="label">Tarjeta pendiente</div><div class="value warn">${money(s.pendingCard)}</div></div>`;
+document.getElementById("funds").innerHTML=`<div class="row"><span>Dinero operativo (sin Base)</span><b>${money(f.Caja+f.Disponible+f.Nequi+f.Tarjeta)}</b></div><div class="row" style="margin-top:7px"><span>Base de caja</span><b>${money(f.Base)}</b></div>`
+}
+function productsUI(){document.getElementById("products").innerHTML=products.map(p=>`<button class="product" onclick="add(${p.id})"><b>${p.n}</b><span>${p.p?money(p.p):"Definir valor"}</span></button>`).join("")}
+function add(id){let p=products.find(x=>x.id===id);if(!p.p){let v=+prompt("Valor del producto");if(!v)return;p={...p,p:v}};let q=s.cart.find(x=>x.id===p.id&&x.p===p.p);if(q)q.q++;else s.cart.push({...p,q:1});save()}
+function cartTotal(){return s.cart.reduce((a,x)=>a+x.p*x.q,0)}
+function cartUI(){document.getElementById("cart").innerHTML=s.cart.length?s.cart.map((x,i)=>`<div class="cartrow"><div>${x.n}<br><span class="small">${money(x.p)} c/u</span></div><div class="qty"><button class="btn ghost" onclick="qty(${i},-1)">−</button><b>${x.q}</b><button class="btn ghost" onclick="qty(${i},1)">+</button></div><b>${money(x.p*x.q)}</b></div>`).join(""):'<div class="sub">No hay productos.</div>';document.getElementById("total").textContent=money(cartTotal());document.querySelectorAll(".pay button").forEach(x=>x.classList.toggle("sel",x.textContent===s.pay))}
+function qty(i,d){s.cart[i].q+=d;if(s.cart[i].q<=0)s.cart.splice(i,1);save()}
+function setPay(p,b){s.pay=p;clearSplit(false);document.querySelectorAll(".pay button").forEach(x=>x.classList.remove("sel"));b.classList.add("sel")}
+function clearSplit(r=true){["splitCash","splitNequi","splitCard"].forEach(id=>document.getElementById(id).value=0);if(r)render()}
+function clearCart(){s.cart=[];clearSplit();save()}
+function charge(){
+let total=cartTotal();if(!total)return alert("Agrega productos.");
+let parts={Efectivo:+document.getElementById("splitCash").value||0,Nequi:+document.getElementById("splitNequi").value||0,Tarjeta:+document.getElementById("splitCard").value||0};
+if(Object.values(parts).reduce((a,b)=>a+b,0)===0)parts[s.pay]=total;
+if(Object.values(parts).reduce((a,b)=>a+b,0)!==total)return alert("Los pagos no coinciden con el total.");
+for(let k in parts){if(parts[k]>s.funds[k])return alert(`Fondos insuficientes en ${k}.`)}
+for(let k in parts){s.funds[k]+=parts[k]}
+s.movements.push({id:Date.now(),date:new Date().toISOString(),type:"Venta",concept:"Venta",value:total,parts});
+s.cart=[];clearSplit(false);s.pay='Efectivo';save();alert("✓ VENTA REGISTRADA EXITOSAMENTE\n\nLa venta fue guardada en el histórico.\nEl POS quedó listo para realizar una nueva venta.");}
+function addPurchase(){
+let n=document.getElementById("buyName").value.trim(),v=+document.getElementById("buyValue").value,src=document.getElementById("buySource").value,d=document.getElementById("buyDate")?.value||new Date().toISOString().slice(0,10);
+if(!n||!v)return alert("Completa concepto y valor.");if(s.funds[src]<v)return alert(`Fondos insuficientes en ${src}.`);
+s.funds[src]-=v;s.movements.push({id:Date.now(),date:d+'T12:00:00',type:"Compra",concept:n,value:-v,source:src});document.getElementById("buyName").value="";document.getElementById("buyValue").value="";save();alert("Compra registrada en el histórico.")}
+function movementsUI(){let a=[...s.movements].reverse();document.getElementById("table").innerHTML=a.length?`<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Valor</th><th>Detalle</th></tr></thead><tbody>${a.map(m=>`<tr><td>${new Date(m.date).toLocaleString("es-CO")}</td><td>${m.type}</td><td>${m.concept}</td><td class="${m.value>=0?"ok":"bad"}">${money(m.value)}</td><td>${m.parts?Object.entries(m.parts).filter(x=>x[1]).map(x=>x[0]+" "+money(x[1])).join(" · "):m.source}</td></tr>`).join("")}</tbody></table>`:'<div class="sub">Sin movimientos.</div>'}
+function undo(){let m=s.movements.pop();if(!m)return;if(m.type==="Venta")for(let k in m.parts)s.funds[k]-=m.parts[k];if(m.type==="Compra")s.funds[m.source]-=m.value;save()}
+const labels={biz:"Negocio",address:"Dirección",phone:"Teléfono",date:"Fecha/hora",number:"Número de venta",seller:"Vendedor",items:"Productos",subtotal:"Subtotal",discount:"Descuento",total:"Total",payment:"Forma de pago",received:"Recibido",change:"Cambio",qr:"QR",message:"Mensaje final"};
+function ticketUI(){
+let t=s.ticket;
+document.getElementById("builder").innerHTML=Object.keys(labels).map(k=>`<div class="block"><div class="blocktop"><label class="check"><input type="checkbox" ${t[k]?"checked":""} onchange="toggleT('${k}',this.checked)"> ${labels[k]}</label><span class="pill">58 mm</span></div>${k==="message"?`<input style="margin-top:7px;width:100%" value="${esc(t.messageText)}" oninput="s.ticket.messageText=this.value;preview()">`:''}</div>`).join("");
+preview()
+}
+function toggleT(k,v){s.ticket[k]=v;preview()}
+function esc(x){return x.replace(/"/g,"&quot;")}
+function preview(){
+let t=s.ticket, lines=[];
+if(t.biz)lines.push(`<div class="center big">${esc(s.config.biz)}</div>`);
+if(t.address)lines.push(`<div class="center">Dirección del negocio</div>`);
+if(t.phone)lines.push(`<div class="center">Tel: 000 000 0000</div>`);
+if(t.date||t.number)lines.push(`<div>${t.date?"Fecha: 01/10/2026 12:00":""}${t.number?"\nVenta #000001":""}</div>`);
+lines.push(`<div>------------------------------</div>`);
+if(t.items)lines.push(`<div>1 x Sándwich de pavo   $12.000\n1 x Bebida              $4.000</div>`);
+if(t.subtotal)lines.push(`<div>Subtotal               $16.000</div>`);
+if(t.discount)lines.push(`<div>Descuento                   $0</div>`);
+if(t.total)lines.push(`<div class="big">TOTAL                  $16.000</div>`);
+if(t.payment)lines.push(`<div>Forma de pago: EFECTIVO</div>`);
+if(t.received)lines.push(`<div>Recibido               $20.000</div>`);
+if(t.change)lines.push(`<div>Cambio                  $4.000</div>`);
+if(t.qr)lines.push(`<div class="center">[ QR ]</div>`);
+if(t.message)lines.push(`<div class="center">\n${esc(t.messageText)}</div>`);
+document.getElementById("preview").innerHTML=lines.join("");
+}
+function saveTicket(){localStorage.setItem(KEY,JSON.stringify(s));alert("Diseño del ticket guardado.");}
+function testTicket(){alert("Vista de prueba actualizada. La impresión física ESC/POS se conecta en la capa Windows.");}
+function configUI(){document.getElementById("bizName").value=s.config.biz;document.getElementById("printerName").value=s.config.printer;document.getElementById("paper").value=s.config.paper;document.getElementById("drawer").value=s.config.drawer}
+function saveConfig(){s.config={biz:document.getElementById("bizName").value||"La Colina",printer:document.getElementById("printerName").value,paper:document.getElementById("paper").value,drawer:document.getElementById("drawer").value};save();alert("Configuración guardada.")}
+function navItems(){
+  return [...document.querySelectorAll('.nav > button')].filter(b=>b.dataset.navId).map(b=>({id:b.dataset.navId,label:b.textContent}));
+}
+function applyNavOrder(){
+  const nav=document.querySelector('.nav'); if(!nav)return;
+  const buttons=[...nav.querySelectorAll('button[data-nav-id]')];
+  const order=s.navOrder||buttons.map(b=>b.dataset.navId);
+  order.forEach(id=>{const b=buttons.find(x=>x.dataset.navId===id);if(b)nav.appendChild(b)});
+  buttons.filter(b=>!order.includes(b.dataset.navId)).forEach(b=>nav.appendChild(b));
+}
+function navOrganizerUI(){
+  const box=document.getElementById('navOrganizer'); if(!box)return;
+  const buttons=[...document.querySelectorAll('.nav > button[data-nav-id]')];
+  const order=s.navOrder||buttons.map(b=>b.dataset.navId);
+  s.navOrder=order.filter(id=>buttons.some(b=>b.dataset.navId===id));
+  buttons.forEach(b=>{if(!s.navOrder.includes(b.dataset.navId))s.navOrder.push(b.dataset.navId)});
+  box.innerHTML=s.navOrder.map((id,i)=>{const b=buttons.find(x=>x.dataset.navId===id);return b?`<div class="nav-item"><b>${b.textContent}</b><div class="nav-arrows"><button class="btn ghost" onclick="moveNav('${id}',-1)" ${i===0?'disabled':''}>↑</button><button class="btn ghost" onclick="moveNav('${id}',1)" ${i===s.navOrder.length-1?'disabled':''}>↓</button></div></div>`:''}).join('');
+}
+function moveNav(id,dir){
+  const order=[...(s.navOrder||[])],i=order.indexOf(id),j=i+dir;
+  if(i<0||j<0||j>=order.length)return;
+  [order[i],order[j]]=[order[j],order[i]];s.navOrder=order;localStorage.setItem(KEY,JSON.stringify(s));applyNavOrder();navOrganizerUI();
+}
+function prepareNav(){
+  const nav=document.querySelector('.nav'); if(!nav)return;
+  const existing=[...nav.querySelectorAll('button')];
+  existing.forEach((b,i)=>{if(!b.dataset.navId)b.dataset.navId=['inicio','venta','compras','mov','fact','ticket','config'][i]||('base'+i)});
+  // The v4 patch adds its extra buttons after this function runs, so this is called again after patch initialization.
+  applyNavOrder();navOrganizerUI();
+}
+function exportBackup(){let blob=new Blob([JSON.stringify(s,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="LaColina_respaldo_v"+s.version+"_"+new Date().toISOString().slice(0,10)+".json";a.click()}
+function importBackup(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!d.funds||!d.movements)throw 0;s=d;s.version=Math.max(3,d.version||3);save();alert("Respaldo restaurado.")}catch{alert("Respaldo inválido.")}};r.readAsText(f)}
+function resetAll(){if(confirm("Borrar los datos locales de prueba y volver a los saldos iniciales?")){localStorage.removeItem(KEY);location.reload()}}
+render();
+prepareNav();
+</script>
+<script>/* v0.4 patch: products, historical reports, personal, card settlement, daily closure */
+(function(){
+const V4KEY='la_colina_pos_v04_patch';
+const oldProducts=[...products];
+function ensure(){
+  s.products = (s.products||oldProducts).map(p=>({...p,active:p.active!==false}));
+  s.closures=s.closures||[];
+  s.inventory=s.inventory||[];
+  s.config=s.config||{biz:'La Colina',printer:'DigitalPOS DIG-ISH58',paper:'58 mm',drawer:'Solo efectivo'};
+  s.pendingCard=Number(s.pendingCard||0);
+  if(!s.movements)s.movements=[];
+  localStorage.setItem(V4KEY,JSON.stringify(s));
+}
+ensure();
+const css=`<style id="v4css">.v4grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.v4card{background:#fff;border:1px solid #e5e7eb;border-radius:15px;padding:13px}.v4muted{font-size:11px;color:#6b7280}.v4table{width:100%;border-collapse:collapse}.v4table th,.v4table td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:12px;text-align:left}.v4table th{font-size:10px;color:#6b7280;text-transform:uppercase}.v4modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:15px;z-index:99}.v4modal>div{background:#fff;border-radius:16px;padding:16px;width:min(620px,100%)}.v4modal.hide{display:none}@media(max-width:800px){.v4grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.v4grid{grid-template-columns:1fr}}
+.fe-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:12px}.fe-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.fe-status{background:#fff7ed;color:#b45309;border:1px solid #fed7aa;border-radius:99px;padding:7px 10px;font-size:11px;font-weight:800;white-space:nowrap}.fe-total-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.fe-total{display:flex;justify-content:space-between;align-items:center;padding-top:13px;font-size:14px}.fe-total strong{font-size:25px}.fe-info{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:12px;padding:11px;font-size:12px;line-height:1.45}.fe-state{padding:12px;border-radius:12px;background:#f8fafc;border:1px solid var(--line);font-size:12px}.fe-table{width:100%;border-collapse:collapse}.fe-table th,.fe-table td{padding:8px;border-bottom:1px solid var(--line);font-size:12px}.fe-table th{color:var(--muted);font-size:10px;text-transform:uppercase}.fe-badge{display:inline-block;padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800;background:#dcfce7;color:#166534}.fe-item{display:grid;grid-template-columns:1fr 90px 110px 110px 35px;gap:7px;align-items:center;border-bottom:1px solid var(--line);padding:8px 0}.fe-item input,.fe-item select{border:1px solid var(--line);border-radius:9px;padding:8px;background:#fff;font:inherit}.fe-item .fe-price,.fe-item .fe-line{text-align:right}.fe-mini{font-size:11px;color:var(--muted)}
+@media(max-width:800px){.fe-grid{grid-template-columns:1fr}.fe-item{grid-template-columns:1fr 80px 100px 100px 32px}.fe-head{align-items:flex-start;flex-direction:column}}
+
+</style>`;
+document.head.insertAdjacentHTML('beforeend',css);
+const nav=document.querySelector('.nav');
+function navBtn(id,label){let b=document.createElement('button');b.textContent=label;b.dataset.navId=id;b.onclick=()=>v4tab(id,b);nav.appendChild(b)}
+navBtn('v4hist','📋 Historial');navBtn('v4products','💲 Productos');navBtn('v4personal','👤 Personales');navBtn('v4card','💳 Tarjeta');navBtn('v4close','🔒 Cierre');
+// Incorporar las pestañas dinámicas al orden guardado.
+if(typeof applyNavOrder==='function'){applyNavOrder();navOrganizerUI();}
+function sec(id,title,html){let x=document.createElement('section');x.id=id;x.className='view hidden';x.innerHTML='<div class="card"><h2>'+title+'</h2>'+html+'</div>';document.querySelector('.app').appendChild(x)}
+sec('v4hist','Historial de ventas y gastos',`<div class="form"><div class="field"><label>Desde</label><input id="v4from" type="date"></div><div class="field"><label>Hasta</label><input id="v4to" type="date"></div><div class="field"><label>Tipo</label><select id="v4type"><option value="">Todos</option><option>Venta</option><option>Compra</option><option>Personal</option><option>Tarjeta recibida</option></select></div><div class="field"><label>Buscar</label><input id="v4search" placeholder="Concepto..."></div></div><div id="v4summary" class="v4grid" style="margin-top:10px"></div><div id="v4histtable" style="overflow:auto;margin-top:10px"></div>`);
+sec('v4products','Productos y precios',`<p class="small">Puedes modificar los precios sin tocar el programa. Los cambios solo afectan ventas nuevas; el histórico conserva el precio con el que se vendió.</p><button class="btn dark" onclick="v4newProduct()">+ Nuevo producto</button><div id="v4prodtable" style="overflow:auto;margin-top:10px"></div>`);
+sec('v4personal','Gastos personales',`<div class="form"><div class="field"><label>Fecha</label><input id="v4pdate" type="date"></div><div class="field"><label>Concepto</label><input id="v4pname" placeholder="Retiro personal"></div><div class="field"><label>Valor</label><input id="v4pvalue" type="number" min="0"></div><div class="field"><label>Fuente</label><select id="v4psource"><option>Caja</option><option>Disponible</option><option>Nequi</option><option>Tarjeta</option></select></div></div><button class="btn dark" style="margin-top:9px" onclick="v4addPersonal()">Registrar</button><div id="v4personaltable" style="overflow:auto;margin-top:10px"></div>`);
+sec('v4card','Tarjeta: pendientes y recibidos',`<div class="v4card"><b>Pendiente actual: <span id="v4pending"></span></b></div><div class="form" style="margin-top:10px"><div class="field"><label>Fecha recibido</label><input id="v4cdate" type="date"></div><div class="field"><label>Valor recibido</label><input id="v4creceived" type="number" min="0"></div><div class="field"><label>Deducciones / retenciones</label><input id="v4cdeduct" type="number" min="0" value="0"></div><div class="field"><label>Referencia</label><input id="v4cnote"></div></div><button class="btn dark" style="margin-top:9px" onclick="v4receiveCard()">Registrar recibido</button><div id="v4cardtable" style="overflow:auto;margin-top:10px"></div>`);
+sec('v4close','Cierre diario',`<div class="notice">El cierre compara lo que el sistema espera con lo que realmente cuentas. La Base nunca se suma al efectivo operativo.</div><div class="form" style="margin-top:10px"><div class="field"><label>Fecha</label><input id="v4closedate" type="date"></div><div class="field"><label>Efectivo operativo contado</label><input id="v4cashcount" type="number" min="0"></div><div class="field"><label>Nequi contado</label><input id="v4nequicount" type="number" min="0"></div><div class="field"><label>Tarjeta pendiente real</label><input id="v4cardcount" type="number" min="0"></div></div><button class="btn dark" style="margin-top:9px" onclick="v4closeDay()">Guardar cierre</button><div id="v4closetable" style="overflow:auto;margin-top:10px"></div>`);
+function v4tab(id,b){document.querySelectorAll('.view').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');v4render()}
+function iso(){return new Date().toISOString().slice(0,10)}
+function fmt(n){return '$'+Math.round(Number(n)||0).toLocaleString('es-CO')}
+function v4render(){v4history();(window.v4products||v4products)();v4personal();v4card();v4closures()}
+function v4history(){let a=[...s.movements].reverse(),f=v4from.value,t=v4to.value,ty=v4type.value,q=v4search.value.toLowerCase();a=a.filter(m=>(!f||String(m.date).slice(0,10)>=f)&&(!t||String(m.date).slice(0,10)<=t)&&(!ty||m.type===ty)&&(!q||JSON.stringify(m).toLowerCase().includes(q)));let sales=a.filter(m=>m.type==='Venta').reduce((x,m)=>x+m.value,0),g=a.filter(m=>m.type==='Compra').reduce((x,m)=>x+Math.abs(m.value),0),p=a.filter(m=>m.type==='Personal').reduce((x,m)=>x+Math.abs(m.value),0);v4summary.innerHTML=[['Ventas',sales,'ok'],['Gastos negocio',g,'bad'],['Personales',p,'warn']].map(x=>`<div class="v4card"><div class="label">${x[0]}</div><div class="value ${x[2]}">${fmt(x[1])}</div></div>`).join('');v4histtable.innerHTML=a.length?`<table class="v4table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Valor</th><th>Medio</th><th>Observación</th></tr></thead><tbody>${a.map(m=>`<tr><td>${String(m.date).slice(0,10)}</td><td>${m.type}</td><td>${m.concept||''}</td><td>${fmt(m.value)}</td><td>${m.parts?Object.entries(m.parts).filter(x=>x[1]).map(x=>x[0]+' '+fmt(x[1])).join(' · '):(m.source||'')}</td><td>${m.note||''}</td></tr>`).join('')}</tbody></table>`:'<div class="small">No hay movimientos con estos filtros.</div>'}
+function v4products(){
+  const ps=[...s.products].sort((a,b)=>(a.order??0)-(b.order??0));
+  const cats=['Todas',...(s.categories||[]).filter(c=>c!=='Todas')];
+  const selected=window._adminCat||'Todas';
+  v4prodtable.innerHTML=`<div class="toolbar">`+
+    `<button class="btn dark" onclick="v5newProduct()">＋ Nuevo producto</button>`+
+    `<button class="btn ghost" onclick="v5newCategory()">＋ Categoría</button>`+
+    `<select id="v5catfilter" onchange="window._adminCat=this.value;(window.v4products||v4products)()">${cats.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('')}</select>`+
+    `</div><div class="small" style="margin-bottom:8px">Usa ↑ y ↓ para cambiar el orden. El mismo orden se aplicará en Nueva venta y Facturación electrónica.</div>`+
+    `<table class="v4table"><thead><tr><th>#</th><th>Producto</th><th>Precio</th><th>Categoría</th><th>Estado</th><th>Orden</th><th></th></tr></thead><tbody>`+
+    ps.filter(p=>selected==='Todas'||(p.cat||'Sin categoría')===selected).map((p,i)=>`<tr><td>${i+1}</td><td><b>${p.n}</b></td><td>${fmt(p.p)}</td><td>${p.cat||'Sin categoría'}</td><td>${p.active?'Activo':'Inactivo'}</td><td><button class="btn ghost" title="Subir" onclick="v5move(${p.id},-1)">↑</button> <button class="btn ghost" title="Bajar" onclick="v5move(${p.id},1)">↓</button></td><td><button class="btn ghost" onclick="v5editProduct(${p.id})">Editar</button></td></tr>`).join('')+
+    `</tbody></table>`;
+}
+window.v4newProduct=()=>v4editProduct(null);window.v4editProduct=id=>{let p=s.products.find(x=>x.id===id);let m=document.createElement('div');m.className='v4modal';m.innerHTML=`<div><h2>${p?'Editar producto':'Nuevo producto'}</h2><div class="form"><div class="field"><label>Nombre</label><input id="vpname" value="${p?p.n:''}"></div><div class="field"><label>Precio</label><input id="vpprice" type="number" value="${p?p.p:0}"></div><div class="field"><label>Categoría</label><input id="vpcat" value="${p?p.cat||'':''}"></div><div class="field"><label>Activo</label><select id="vpactive"><option value="1" ${!p||p.active?'selected':''}>Sí</option><option value="0" ${p&&!p.active?'selected':''}>No</option></select></div></div><div class="toolbar"><button class="btn dark" id="vpsave">Guardar</button><button class="btn ghost" id="vpcancel">Cancelar</button></div></div>`;document.body.appendChild(m);vpcancel.onclick=()=>m.remove();vpsave.onclick=()=>{let n=vpname.value.trim(),pr=Number(vpprice.value);if(!n||!Number.isFinite(pr)||pr<0)return alert('Nombre y precio válidos.');if(p)Object.assign(p,{n,p:pr,cat:vpcat.value,active:vpactive.value==='1'});else s.products.push({id:Date.now(),n,p:pr,cat:vpcat.value,active:vpactive.value==='1'});localStorage.setItem(V4KEY,JSON.stringify(s));m.remove();productsUI();v4render()}}
+function v4personal(){let a=s.movements.filter(m=>m.type==='Personal').reverse(),tot=a.reduce((x,m)=>x+Math.abs(m.value),0);v4personaltable.innerHTML=`<p><b>Acumulado personal: ${fmt(tot)}</b></p>`+(a.length?`<table class="v4table"><thead><tr><th>Fecha</th><th>Concepto</th><th>Valor</th><th>Fuente</th></tr></thead><tbody>${a.map(m=>`<tr><td>${String(m.date).slice(0,10)}</td><td>${m.concept}</td><td>${fmt(Math.abs(m.value))}</td><td>${m.source}</td></tr>`).join('')}</tbody></table>`:'<div class="small">Sin gastos personales.</div>')}
+window.v4addPersonal=()=>{let n=v4pname.value.trim(),v=Number(v4pvalue.value),src=v4psource.value,d=v4pdate.value||iso();if(!n||!v)return alert('Completa los datos.');if((s.funds[src]||0)<v)return alert('Fondos insuficientes en '+src+'.');s.funds[src]-=v;s.movements.push({id:Date.now(),date:d+'T12:00:00',type:'Personal',concept:n,value:-v,source:src});localStorage.setItem(V4KEY,JSON.stringify(s));v4pname.value='';v4pvalue.value='';render();v4render()};
+function v4card(){v4pending.textContent=fmt(s.pendingCard);let a=s.movements.filter(m=>m.type==='Tarjeta recibida').reverse();v4cardtable.innerHTML=a.length?`<table class="v4table"><thead><tr><th>Fecha</th><th>Recibido</th><th>Deducciones</th><th>Referencia</th></tr></thead><tbody>${a.map(m=>`<tr><td>${String(m.date).slice(0,10)}</td><td>${fmt(m.received||m.value)}</td><td>${fmt(m.deduction||0)}</td><td>${m.note||''}</td></tr>`).join('')}</tbody></table>`:'<div class="small">Sin recibidos de tarjeta registrados.</div>'}
+window.v4receiveCard=()=>{let v=Number(v4creceived.value),d=v4cdate.value||iso(),ded=Number(v4cdeduct.value)||0;if(!v||v>s.pendingCard)return alert('Valor recibido inválido o superior al pendiente.');s.pendingCard-=v;s.funds.Tarjeta+=v;s.movements.push({id:Date.now(),date:d+'T12:00:00',type:'Tarjeta recibida',concept:'Liquidación de tarjeta',value:v,received:v,deduction:ded,note:v4cnote.value||''});localStorage.setItem(V4KEY,JSON.stringify(s));render();v4render()};
+function v4closures(){let a=(s.closures||[]).slice().reverse();v4closetable.innerHTML=a.length?`<table class="v4table"><thead><tr><th>Fecha</th><th>Efectivo esperado</th><th>Contado</th><th>Nequi esperado</th><th>Contado</th><th>Tarjeta pendiente</th><th>Estado</th></tr></thead><tbody>${a.map(c=>`<tr><td>${c.date}</td><td>${fmt(c.cashExpected)}</td><td>${fmt(c.cashCounted)}</td><td>${fmt(c.nequiExpected)}</td><td>${fmt(c.nequiCounted)}</td><td>${fmt(c.cardPending)}</td><td>${c.status}</td></tr>`).join('')}</tbody></table>`:'<div class="small">Sin cierres registrados.</div>'}
+window.v4closeDay=()=>{let d=v4closedate.value||iso(),cash=Number(v4cashcount.value),n=Number(v4nequicount.value),cp=Number(v4cardcount.value);if(![cash,n,cp].every(Number.isFinite))return alert('Completa los tres valores.');let ok=Math.abs(cash-s.funds.Caja)<1&&Math.abs(n-s.funds.Nequi)<1&&Math.abs(cp-s.pendingCard)<1;s.closures.push({date:d,cashExpected:s.funds.Caja,cashCounted:cash,nequiExpected:s.funds.Nequi,nequiCounted:n,cardPending:cp,status:ok?'CUADRA':'REVISAR'});localStorage.setItem(V4KEY,JSON.stringify(s));v4render();alert(ok?'Cierre CUADRA.':'Cierre REVISAR: revisa los movimientos antes de cambiar cifras.')};
+['v4from','v4to','v4type','v4search'].forEach(id=>document.getElementById(id).addEventListener('input',v4history));
+v4pdate.value=iso();v4cdate.value=iso();v4closedate.value=iso();
+// Override price display and add editable prices button on existing product section
+const phead=document.querySelector('#venta .card h2');if(phead&&!document.getElementById('v4priceLink')){let b=document.createElement('button');b.id='v4priceLink';b.className='btn ghost';b.textContent='Editar precios';b.onclick=()=>{let nb=[...nav.querySelectorAll('button')].find(x=>x.textContent.includes('Productos'));if(nb)v4tab('v4products',nb)};phead.parentElement.insertBefore(b,phead.nextSibling)}
+// New sales should never require existing funds; card sales increase pending only.
+const originalCharge=charge;window.charge=function(){let total=cartTotal();if(!total)return alert('Agrega productos.');let parts={Efectivo:+document.getElementById('splitCash').value||0,Nequi:+document.getElementById('splitNequi').value||0,Tarjeta:+document.getElementById('splitCard').value||0};if(Object.values(parts).reduce((a,b)=>a+b,0)===0)parts[s.pay]=total;if(Object.values(parts).reduce((a,b)=>a+b,0)!==total)return alert('Los pagos no coinciden con el total.');for(let k in parts){if(k==='Efectivo')s.funds.Caja+=parts[k];if(k==='Nequi')s.funds.Nequi+=parts[k];if(k==='Tarjeta')s.pendingCard+=parts[k]}s.movements.push({id:Date.now(),date:new Date().toISOString(),type:'Venta',concept:'Venta',value:total,parts,items:JSON.parse(JSON.stringify(s.cart))});s.cart=[];localStorage.setItem(V4KEY,JSON.stringify(s));save();alert('Venta registrada y guardada en el histórico.')}
+v4render();
+})();
+
+</script>
+<script>
+/* v0.5 — categorías, orden de productos, precios sincronizados, fechas históricas y conciliación de tarjeta */
+(function(){
+  function today(){return new Date().toISOString().slice(0,10)}
+  s.products=(s.products||products.map(p=>({...p,cat:p.cat||'Sin categoría',active:p.active!==false,order:p.order||0}))).map((p,i)=>({...p,cat:p.cat||'Sin categoría',active:p.active!==false,order:Number.isFinite(p.order)?p.order:i}));
+  s.categories=s.categories||['Sándwiches','Bebidas','Otros'];
+  // Assign sensible categories to initial products if missing
+  s.products.forEach(p=>{if(p.n.toLowerCase().includes('sándwich')) p.cat=p.cat==='Sin categoría'?'Sándwiches':p.cat; else if(p.n.toLowerCase().includes('bebida')) p.cat=p.cat==='Sin categoría'?'Bebidas':p.cat;});
+  s.products.sort((a,b)=>a.order-b.order);
+  if(document.getElementById('buyDate')) document.getElementById('buyDate').value=today();
+
+  // Keep legacy product buttons synchronized with the editable catalog.
+  window.productsUI=function(){
+    const el=document.getElementById('products'); if(!el)return;
+    const active=s.products.filter(p=>p.active!==false).sort((a,b)=>(a.order??0)-(b.order??0));
+    const cats=['Todas',...Array.from(new Set(active.map(p=>p.cat||'Sin categoría')))];
+    const current=window._posCat||'Todas';
+    el.innerHTML=`<div style="grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap;margin-bottom:2px">${cats.map(c=>`<button class="btn ${c===current?'dark':'ghost'}" onclick="window._posCat=${JSON.stringify(c)};productsUI()">${c}</button>`).join('')}</div>`+
+      active.filter(p=>current==='Todas'||(p.cat||'Sin categoría')===current).map(p=>`<button class="product" onclick="add(${p.id})"><b>${p.n}</b><span>${p.p?money(p.p):'Definir valor'}</span></button>`).join('');
+  };
+  window.add=function(id){let p=s.products.find(x=>x.id===id);if(!p||p.active===false)return;if(!p.p){let v=+prompt('Valor del producto');if(!v)return;p.p=v;syncCatalog();}let q=s.cart.find(x=>x.id===p.id);if(q)q.q++;else s.cart.push({...p,q:1});save()};
+  function syncCatalog(){
+    s.products.forEach(p=>{p.p=Number(p.p)||0});
+    localStorage.setItem(KEY,JSON.stringify(s));
+    localStorage.setItem(V4KEY,JSON.stringify(s));
+  }
+  window.v4editProduct=window.v4editProduct||function(id){};
+
+  // Replace the product manager with categories + ordering controls.
+  window.v4products=function(){
+    const ps=[...s.products].sort((a,b)=>(a.order??0)-(b.order??0));
+    const cats=['Todas',...s.categories.filter(c=>c!=='Todas')];
+    const selected=window._adminCat||'Todas';
+    v4prodtable.innerHTML=`<div class="toolbar"><button class="btn dark" onclick="v5newProduct()">＋ Nuevo producto</button><button class="btn ghost" onclick="v5newCategory()">＋ Categoría</button><select id="v5catfilter" onchange="window._adminCat=this.value;(window.v4products||v4products)()">${cats.map(c=>`<option ${c===selected?'selected':''}>${c}</option>`).join('')}</select></div>`+
+    `<div class="small" style="margin-bottom:8px">Arriba/abajo cambia el orden en “Nueva venta”. El precio se actualiza inmediatamente allí.</div>`+
+    `<table class="v4table"><thead><tr><th>Orden</th><th>Producto</th><th>Precio</th><th>Categoría</th><th>Estado</th><th>Ordenar</th><th></th></tr></thead><tbody>`+
+    ps.filter(p=>selected==='Todas'||(p.cat||'Sin categoría')===selected).map((p,i)=>`<tr><td>${i+1}</td><td>${p.n}</td><td>${fmt(p.p)}</td><td>${p.cat||'Sin categoría'}</td><td>${p.active?'Activo':'Inactivo'}</td><td><button class="btn ghost" onclick="v5move(${p.id},-1)">↑</button> <button class="btn ghost" onclick="v5move(${p.id},1)">↓</button></td><td><button class="btn ghost" onclick="v5editProduct(${p.id})">Editar</button></td></tr>`).join('')+`</tbody></table>`;
+  };
+  window.v5newCategory=function(){let n=prompt('Nombre de la categoría');if(!n)return;n=n.trim();if(!n)return;if(!s.categories.includes(n))s.categories.push(n);syncCatalog();(window.v4products||v4products)()};
+  window.v5move=function(id,dir){let ps=[...s.products].sort((a,b)=>(a.order??0)-(b.order??0));let i=ps.findIndex(p=>p.id===id),j=i+dir;if(i<0||j<0||j>=ps.length)return;[ps[i].order,ps[j].order]=[ps[j].order??j,ps[i].order??i];ps.forEach((p,k)=>p.order=k);s.products=ps;syncCatalog();(window.v4products||v4products)();productsUI()};
+  window.v5newProduct=function(){v5editProduct(null)};
+  window.v5editProduct=function(id){
+    let p=s.products.find(x=>x.id===id); let m=document.createElement('div');m.className='v4modal';
+    m.innerHTML=`<div><h2>${p?'Editar producto':'Nuevo producto'}</h2><div class="form"><div class="field"><label>Nombre</label><input id="v5name" value="${p?p.n:''}"></div><div class="field"><label>Precio</label><input id="v5price" type="number" min="0" value="${p?p.p:0}"></div><div class="field"><label>Categoría</label><select id="v5cat">${s.categories.map(c=>`<option ${p&&p.cat===c?'selected':''}>${c}</option>`).join('')}</select></div><div class="field"><label>Estado</label><select id="v5active"><option value="1" ${!p||p.active?'selected':''}>Activo</option><option value="0" ${p&&!p.active?'selected':''}>Inactivo</option></select></div></div><div class="toolbar"><button class="btn dark" id="v5save">Guardar</button><button class="btn ghost" id="v5cancel">Cancelar</button></div></div>`;
+    document.body.appendChild(m);v5cancel.onclick=()=>m.remove();v5save.onclick=()=>{let n=v5name.value.trim(),pr=Number(v5price.value),cat=v5cat.value;if(!n||!Number.isFinite(pr)||pr<0)return alert('Nombre y precio válidos.');if(p)Object.assign(p,{n,p:pr,cat,active:v5active.value==='1'});else s.products.push({id:Date.now(),n,p:pr,cat,active:v5active.value==='1',order:s.products.length});syncCatalog();m.remove();productsUI();(window.v4products||v4products)()};
+  };
+
+  // Historical sales: add a date before saving and do not require current funds.
+  const saleCard=document.querySelector('#venta .layout .card:last-child');
+  if(saleCard && !document.getElementById('saleDate')){
+    const d=document.createElement('div');d.className='field';d.style.marginTop='10px';d.innerHTML='<label>Fecha de la venta</label><input id="saleDate" type="date">';saleCard.insertBefore(d,saleCard.querySelector('.pay'));document.getElementById('saleDate').value=today();
+  }
+  window.charge=function(){
+    let total=cartTotal();if(!total)return alert('Agrega productos.');
+    let parts={Efectivo:+document.getElementById('splitCash').value||0,Nequi:+document.getElementById('splitNequi').value||0,Tarjeta:+document.getElementById('splitCard').value||0};
+    if(Object.values(parts).reduce((a,b)=>a+b,0)===0)parts[s.pay]=total;
+    if(Object.values(parts).reduce((a,b)=>a+b,0)!==total)return alert('Los pagos no coinciden con el total.');
+    let d=document.getElementById('saleDate')?.value||today();
+    if(parts.Efectivo)s.funds.Caja+=parts.Efectivo;
+    if(parts.Nequi)s.funds.Nequi+=parts.Nequi;
+    if(parts.Tarjeta)s.pendingCard+=parts.Tarjeta;
+    s.movements.push({id:Date.now(),date:d+'T12:00:00',type:'Venta',concept:'Venta',value:total,parts,items:JSON.parse(JSON.stringify(s.cart))});
+    // Cerrar la venta y dejar el formulario completamente listo para la siguiente.
+    s.cart=[];
+    clearSplit(false);
+    s.pay='Efectivo';
+    syncCatalog();
+    save();
+    // Confirmación visible de venta exitosa.
+    alert('✓ VENTA REGISTRADA EXITOSAMENTE\n\nLa venta fue guardada en el histórico.\nEl POS quedó listo para realizar una nueva venta.');
+  };
+
+  // Historical purchases: date is already supported; set it on every load.
+  if(document.getElementById('buyDate'))document.getElementById('buyDate').value=today();
+
+  // Card reconciliation: received + deductions account against the SAME pending balance.
+  // Liquidación robusta: todos los valores monetarios se normalizan a pesos enteros
+  // antes de comparar, para evitar errores por decimales internos de JavaScript.
+  window.v4receiveCard=function(){
+    const peso=v=>Math.round(Number(v)||0);
+    const pendiente=peso(s.pendingCard);
+    const recibido=peso(v4creceived.value);
+    const deduccion=peso(v4cdeduct.value);
+    const aplicado=recibido+deduccion;
+    const d=v4cdate.value||today();
+
+    if(recibido<0||deduccion<0||aplicado<=0)
+      return alert('Ingresa el valor recibido y/o las deducciones.');
+
+    // Se permite una diferencia de redondeo menor a $1; nunca se deja saldo negativo.
+    if(aplicado>pendiente)
+      return alert(`El recibido + deducciones ($${aplicado.toLocaleString('es-CO')}) supera el pendiente actual ($${pendiente.toLocaleString('es-CO')}).`);
+
+    s.pendingCard=Math.max(0,pendiente-aplicado);
+    s.funds.Tarjeta=peso(s.funds.Tarjeta)+recibido;
+    s.movements.push({id:Date.now(),date:d+'T12:00:00',type:'Tarjeta recibida',concept:'Liquidación de tarjeta',value:recibido,received:recibido,deduction:deduccion,pendingApplied:aplicado,note:v4cnote.value||''});
+    syncCatalog();render();v4render();
+    v4creceived.value='';v4cdeduct.value='';v4cnote.value='';
+    alert(`Liquidación registrada. Pendiente restante: ${fmt(s.pendingCard)}.`);
+  };
+
+  // Make the card UI explain the rule and auto-calculate deduction when only received is entered.
+  const cardTitle=document.querySelector('#v4card .card h2');
+  if(cardTitle){
+    const note=document.createElement('div');note.className='small';note.style.marginTop='6px';note.innerHTML='El pendiente se reduce por <b>recibido + deducciones/retenciones</b>. La deducción no crea otro saldo pendiente.';cardTitle.parentElement.insertBefore(note,cardTitle.nextSibling);
+    const rv=document.getElementById('v4creceived'), dd=document.getElementById('v4cdeduct');
+    if(rv&&dd)rv.addEventListener('input',()=>{let r=Number(rv.value)||0;let auto=Math.max(0,Number(s.pendingCard)-r);if(document.activeElement===rv)dd.value=auto});
+  }
+
+  // Improve history with date-specific add forms and source visibility.
+  if(document.getElementById('v4histtable')){
+    const h=document.getElementById('v4history');
+  }
+
+  // Override v4history to show item/payment details and preserve historical dates.
+  window.v4history=function(){
+    let a=[...s.movements].reverse(),f=v4from.value,t=v4to.value,ty=v4type.value,q=v4search.value.toLowerCase();
+    a=a.filter(m=>(!f||String(m.date).slice(0,10)>=f)&&(!t||String(m.date).slice(0,10)<=t)&&(!ty||m.type===ty)&&(!q||JSON.stringify(m).toLowerCase().includes(q)));
+    let sales=a.filter(m=>m.type==='Venta').reduce((x,m)=>x+m.value,0),g=a.filter(m=>m.type==='Compra').reduce((x,m)=>x+Math.abs(m.value),0),p=a.filter(m=>m.type==='Personal').reduce((x,m)=>x+Math.abs(m.value),0);
+    v4summary.innerHTML=[['Ventas',sales,'ok'],['Gastos negocio',g,'bad'],['Personales',p,'warn']].map(x=>`<div class="v4card"><div class="label">${x[0]}</div><div class="value ${x[2]}">${fmt(x[1])}</div></div>`).join('');
+    v4histtable.innerHTML=a.length?`<table class="v4table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Valor</th><th>Medio/Fuente</th><th>Detalle</th></tr></thead><tbody>${a.map(m=>`<tr><td>${String(m.date).slice(0,10)}</td><td>${m.type}</td><td>${m.concept||''}</td><td class="${m.value>=0?'ok':'bad'}">${fmt(m.value)}</td><td>${m.parts?Object.entries(m.parts).filter(x=>x[1]).map(x=>x[0]+' '+fmt(x[1])).join(' · '):(m.source||'')}</td><td>${m.type==='Venta'&&m.items?m.items.map(i=>`${i.q}× ${i.n} (${fmt(i.p)})`).join(' · '):(m.type==='Tarjeta recibida'?`Recibido ${fmt(m.received||0)} · Deducciones ${fmt(m.deduction||0)} · aplicado ${fmt(m.pendingApplied||0)}`:(m.note||''))}</td></tr>`).join('')}</tbody></table>`:'<div class="small">No hay movimientos con estos filtros.</div>';
+  };
+
+
+  // Facturación electrónica beta — estructura local preparada para futura integración DIAN/proveedor.
+  s.invoices=s.invoices||[];
+  s.invoiceSeq=s.invoiceSeq||1;
+  window.feMoney=function(n){return fmt(Number(n)||0)};
+  window.feItems=function(){return Array.from(document.querySelectorAll('#feItems .fe-item')).map(r=>({id:Number(r.dataset.id),q:Number(r.querySelector('.fe-q').value)||0,p:Number(r.querySelector('.fe-p').value)||0,n:r.querySelector('.fe-n').value.trim()})).filter(x=>x.q>0&&x.n)};
+  window.feRender=function(){
+    const box=document.getElementById('feItems'); if(!box)return;
+    if(!box.children.length) feAddItem();
+    const items=feItems(); let sub=items.reduce((a,x)=>a+x.q*x.p,0); let iva=0;
+    document.getElementById('feSubtotal').textContent=feMoney(sub);document.getElementById('feDiscount').textContent=feMoney(0);document.getElementById('feTax').textContent=feMoney(iva);document.getElementById('feTotal').textContent=feMoney(sub+iva);
+    feHistory();
+  };
+  window.feAddItem=function(item){
+    const box=document.getElementById('feItems');let id=item?.id||Date.now()+Math.floor(Math.random()*1000);let opts=(s.products||[]).filter(p=>p.active!==false).sort((a,b)=>(a.order??0)-(b.order??0)).map(p=>`<option value="${p.id}" data-price="${p.p}" ${item&&item.id===p.id?'selected':''}>${p.n} · ${feMoney(p.p)}</option>`).join('');
+    const row=document.createElement('div');row.className='fe-item';row.dataset.id=item?.id||'';
+    row.innerHTML=`<select class="fe-n" onchange="fePickProduct(this)">${opts}<option value="custom">Producto personalizado</option></select><input class="fe-q" type="number" min="1" value="${item?.q||1}" onchange="feRender()"><input class="fe-p" type="number" min="0" value="${item?.p||0}" onchange="feRender()"><div class="fe-line">${feMoney((item?.q||1)*(item?.p||0))}</div><button class="btn danger" onclick="this.parentElement.remove();feRender()">×</button>`;
+    box.appendChild(row); if(item?.id) row.querySelector('.fe-n').value=item.id; fePickProduct(row.querySelector('.fe-n'),item?.p); feRender();
+  };
+  window.fePickProduct=function(sel,keepPrice){let r=sel.closest('.fe-item');let opt=sel.options[sel.selectedIndex];let prod=(s.products||[]).find(p=>String(p.id)===String(sel.value));r.dataset.id=prod?prod.id:'';if(prod&&!keepPrice)r.querySelector('.fe-p').value=prod.p;if(!prod&&sel.value==='custom')r.querySelector('.fe-p').value=keepPrice||0;feRender()};
+  window.feLoadCart=function(){document.getElementById('feItems').innerHTML='';if(s.cart?.length)s.cart.forEach(i=>feAddItem({id:i.id,q:i.q,p:i.p}));else feAddItem()};
+  window.feClearClient=function(){['feDoc','feName','feEmail','fePhone','feAddress'].forEach(id=>document.getElementById(id).value='');document.getElementById('feDocType').value='CC'};
+  window.feFindClient=function(){alert('En la versión conectada, aquí buscaremos clientes guardados por documento o nombre.')};
+  window.fePreview=function(){let items=feItems(),total=items.reduce((a,x)=>a+x.q*x.p,0);alert(`VISTA PREVIA\n\nLa Colina\nCliente: ${document.getElementById('feName').value||'Consumidor final'}\n\n${items.map(x=>`${x.q} × ${x.n}  ${feMoney(x.q*x.p)}`).join('\n')}\n\nTOTAL: ${feMoney(total)}`)};
+  window.feGenerate=function(){
+    const items=feItems();if(!items.length)return alert('Agrega al menos un producto.');
+    const name=document.getElementById('feName').value.trim();if(!name)return alert('Ingresa el nombre o razón social del cliente.');
+    const total=items.reduce((a,x)=>a+x.q*x.p,0);const num=`FE-${String(s.invoiceSeq++).padStart(6,'0')}`;const inv={id:Date.now(),number:num,date:today(),client:{type:feDocType.value,doc:feDoc.value,name,email:feEmail.value,phone:fePhone.value,address:feAddress.value},items,pay:fePay.value,note:feNote.value,total,status:'Preparada',cufe:null};
+    s.invoices.unshift(inv);save();document.getElementById('feCurrentStatus').innerHTML=`<b>${num}</b> · <span class="fe-badge">Preparada</span><br><span class="fe-mini">Factura creada localmente. La validación DIAN real se habilitará al conectar el proveedor/servicio de facturación.</span>`;feHistory();alert(`${num} creada correctamente en La Colina.`);
+  };
+  window.feHistory=function(){const box=document.getElementById('feHistory');if(!box)return;let a=s.invoices||[];box.innerHTML=a.length?`<table class="fe-table"><thead><tr><th>Factura</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>${a.map(x=>`<tr><td><b>${x.number}</b></td><td>${x.client?.name||''}</td><td>${x.date}</td><td>${feMoney(x.total)}</td><td><span class="fe-badge">${x.status}</span></td><td><button class="btn ghost" onclick="feOpen(${x.id})">Ver</button></td></tr>`).join('')}</tbody></table>`:'<div class="small">Aún no hay facturas registradas.</div>'};
+  window.feOpen=function(id){let x=(s.invoices||[]).find(i=>i.id===id);if(!x)return;document.getElementById('feCurrentStatus').innerHTML=`<b>${x.number}</b> · <span class="fe-badge">${x.status}</span><br>Cliente: ${x.client?.name||''}<br>Total: <b>${feMoney(x.total)}</b><br><span class="fe-mini">CUFE: ${x.cufe||'pendiente de validación'}</span>`};
+  window.feClearHistoryFilter=function(){feHistory()};
+  // Start invoice area with current catalog.
+  if(document.getElementById('fe')){feAddItem();feHistory()}
+
+  // v0.6.4 hardening: use ONE active product manager and ONE sale handler.
+  // This avoids legacy v0.4/v0.5 closures intercepting clicks.
+  window.v4products=function(){
+    const ps=[...(s.products||[])].sort((a,b)=>(a.order??0)-(b.order??0));
+    const cats=['Todas',...((s.categories||[]).filter(c=>c!=='Todas'))];
+    const selected=window._adminCat||'Todas';
+    const box=document.getElementById('v4prodtable'); if(!box)return;
+    box.innerHTML=`<div class="toolbar">`+
+      `<button class="btn dark" onclick="v5newProduct()">＋ Nuevo producto</button>`+
+      `<button class="btn ghost" onclick="v5newCategory()">＋ Categoría</button>`+
+      `<select id="v5catfilter" onchange="window._adminCat=this.value;window.v4products()">${cats.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('')}</select>`+
+      `</div><div class="small" style="margin-bottom:8px">Usa ↑ y ↓ para cambiar el orden. El orden se conserva en Nueva venta y Facturación electrónica.</div>`+
+      `<table class="v4table"><thead><tr><th>#</th><th>Producto</th><th>Precio</th><th>Categoría</th><th>Estado</th><th>Orden</th><th></th></tr></thead><tbody>`+
+      ps.filter(p=>selected==='Todas'||(p.cat||'Sin categoría')===selected).map((p,i)=>`<tr><td>${i+1}</td><td><b>${p.n}</b></td><td>${fmt(p.p)}</td><td>${p.cat||'Sin categoría'}</td><td>${p.active!==false?'Activo':'Inactivo'}</td><td><button type="button" class="btn ghost product-order-btn" title="Subir producto" onclick="window.v5move(${p.id},-1)">↑</button> <button type="button" class="btn ghost product-order-btn" title="Bajar producto" onclick="window.v5move(${p.id},1)">↓</button></td><td><button type="button" class="btn ghost" onclick="window.v5editProduct(${p.id})">Editar</button></td></tr>`).join('')+
+      `</tbody></table>`;
+  };
+  window.v5move=function(id,dir){
+    let ps=[...(s.products||[])].sort((a,b)=>(a.order??0)-(b.order??0));
+    const i=ps.findIndex(p=>String(p.id)===String(id)), j=i+dir;
+    if(i<0||j<0||j>=ps.length)return;
+    [ps[i],ps[j]]=[ps[j],ps[i]]; ps.forEach((p,k)=>p.order=k); s.products=ps;
+    syncCatalog(); window.productsUI(); window.v4products();
+  };
+  // Keep the same catalog/order in the sales screen.
+  window.productsUI=function(){
+    const el=document.getElementById('products'); if(!el)return;
+    const active=[...(s.products||[])].filter(p=>p.active!==false).sort((a,b)=>(a.order??0)-(b.order??0));
+    const cats=['Todas',...Array.from(new Set(active.map(p=>p.cat||'Sin categoría')))];
+    const current=window._posCat||'Todas';
+    el.innerHTML=`<div style="grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap;margin-bottom:2px">${cats.map(c=>`<button type="button" class="btn ${c===current?'dark':'ghost'}" onclick="window._posCat=${JSON.stringify(c)};window.productsUI()">${c}</button>`).join('')}</div>`+
+      active.filter(p=>current==='Todas'||(p.cat||'Sin categoría')===current).map(p=>`<button type="button" class="product" onclick="window.add(${p.id})"><b>${p.n}</b><span>${p.p?money(p.p):'Definir valor'}</span></button>`).join('');
+  };
+  window.add=function(id){
+    const p=(s.products||[]).find(x=>String(x.id)===String(id)); if(!p||p.active===false)return;
+    let price=Number(p.p)||0; if(!price){const v=Number(prompt('Valor del producto'))||0;if(!v)return;price=v;p.p=v;syncCatalog();}
+    const q=s.cart.find(x=>String(x.id)===String(p.id)); if(q){q.q++;q.p=price}else s.cart.push({...p,p:price,q:1});
+    save();
+  };
+  // Explicit global handler: the button calls window.charge(), so no stale legacy function can intercept it.
+  window.charge=function(){
+    const cart=Array.isArray(s.cart)?s.cart:[];
+    const total=Math.round(cart.reduce((a,x)=>a+(Number(x.p)||0)*(Number(x.q)||0),0));
+    if(total<=0)return alert('Agrega productos.');
+    const parts={Efectivo:Math.round(Number(document.getElementById('splitCash')?.value)||0),Nequi:Math.round(Number(document.getElementById('splitNequi')?.value)||0),Tarjeta:Math.round(Number(document.getElementById('splitCard')?.value)||0)};
+    let paid=parts.Efectivo+parts.Nequi+parts.Tarjeta;
+    if(paid===0){parts[s.pay||'Efectivo']=total;paid=total;}
+    if(paid!==total)return alert(`Los pagos no coinciden con el total. Total: ${money(total)} · Pagado: ${money(paid)}`);
+    const saleDate=document.getElementById('saleDate')?.value||today();
+    if(parts.Efectivo)s.funds.Caja+=parts.Efectivo;
+    if(parts.Nequi)s.funds.Nequi+=parts.Nequi;
+    if(parts.Tarjeta)s.pendingCard+=parts.Tarjeta;
+    s.movements.push({id:Date.now(),date:saleDate+'T12:00:00',type:'Venta',concept:'Venta',value:total,parts,items:JSON.parse(JSON.stringify(cart))});
+    s.cart=[]; ['splitCash','splitNequi','splitCard'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=0}); s.pay='Efectivo';
+    syncCatalog(); save();
+    alert('✓ VENTA REGISTRADA EXITOSAMENTE\n\nLa venta fue guardada en el histórico.\nEl POS quedó listo para realizar una nueva venta.');
+  };
+  // v4render must always call the active manager.
+  v4render=function(){v4history();window.v4products();v4personal();v4card();v4closures()};
+  // Initial render with the corrected handlers.
+  window.productsUI(); window.v4products(); v4render();
+  applyNavOrder();navOrganizerUI();
+})();
+</script>
+
+<script>
+/* v0.6.5 FIX PACK
+   Objetivo: eliminar conflictos de versiones anteriores y dejar un solo flujo activo
+   para catálogo, categorías, orden de productos, venta, tarjeta y pestañas.
+*/
+(function(){
+  const KEY='la_colina_pos_v03';
+  const $=id=>document.getElementById(id);
+  const peso=v=>Math.round(Number(v)||0);
+  const money5=n=>'$'+peso(n).toLocaleString('es-CO');
+  const today5=()=>new Date().toISOString().slice(0,10);
+  const load5=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}};
+  const state=()=>{let x=load5(); if(x) return x; return window.s||null};
+  let st=state();
+  if(!st) return;
+
+  /* --- Normalización segura del catálogo --- */
+  st.products=Array.isArray(st.products)&&st.products.length?st.products:([
+    {id:1,n:'Sándwich de pavo',p:12000,cat:'Sándwiches',active:true},
+    {id:2,n:'Sándwich de pernil',p:13000,cat:'Sándwiches',active:true},
+    {id:3,n:'Sándwich de jamón',p:11000,cat:'Sándwiches',active:true},
+    {id:4,n:'Sándwich especial',p:15000,cat:'Sándwiches',active:true},
+    {id:5,n:'Bebida',p:4000,cat:'Bebidas',active:true},
+    {id:6,n:'Producto personalizado',p:0,cat:'Otros',active:true}
+  ]);
+  st.categories=Array.isArray(st.categories)&&st.categories.length?st.categories:['Sándwiches','Bebidas','Otros'];
+  st.products.forEach((p,i)=>{
+    p.id=p.id??(Date.now()+i); p.n=String(p.n||'Producto'); p.p=peso(p.p); p.active=p.active!==false;
+    p.cat=p.cat||'Otros'; if(!st.categories.includes(p.cat))st.categories.push(p.cat); p.order=Number.isFinite(Number(p.order))?Number(p.order):i;
+  });
+  st.products.sort((a,b)=>a.order-b.order).forEach((p,i)=>p.order=i);
+  st.pendingCard=peso(st.pendingCard);
+  st.funds=st.funds||{Caja:0,Disponible:0,Nequi:0,Base:0,Tarjeta:0};
+  ['Caja','Disponible','Nequi','Base','Tarjeta'].forEach(k=>st.funds[k]=peso(st.funds[k]));
+  st.cart=Array.isArray(st.cart)?st.cart:[]; st.movements=Array.isArray(st.movements)?st.movements:[];
+  localStorage.setItem(KEY,JSON.stringify(st));
+  try{ s=st; }catch(e){}
+
+  function save5(){try{s=st}catch(e){} localStorage.setItem(KEY,JSON.stringify(st));}
+  function renderSale5(){
+    const el=$('products'); if(!el)return;
+    const active=st.products.filter(p=>p.active!==false).sort((a,b)=>a.order-b.order);
+    const cats=['Todas',...st.categories];
+    const current=window._posCat5||'Todas';
+    el.innerHTML='<div class="v65-cats">'+cats.map(c=>`<button type="button" class="btn ${c===current?'dark':'ghost'}" data-cat="${encodeURIComponent(c)}">${c}</button>`).join('')+'</div>'+
+      active.filter(p=>current==='Todas'||p.cat===current).map(p=>`<button type="button" class="product" data-prod="${p.id}"><b>${p.n}</b><span>${p.p?money5(p.p):'Definir valor'}</span></button>`).join('');
+    el.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{window._posCat5=decodeURIComponent(b.dataset.cat);renderSale5()});
+    el.querySelectorAll('[data-prod]').forEach(b=>b.onclick=()=>add5(Number(b.dataset.prod)));
+  }
+  function renderCart5(){
+    const el=$('cart'); if(!el)return;
+    el.innerHTML=st.cart.length?st.cart.map((x,i)=>`<div class="cartrow"><div>${x.n}<br><span class="small">${money5(x.p)} c/u</span></div><div class="qty"><button class="btn ghost" data-q="${i}:−1">−</button><b>${x.q}</b><button class="btn ghost" data-q="${i}:1">+</button></div><b>${money5(x.p*x.q)}</b></div>`).join(''):'<div class="sub">No hay productos.</div>';
+    if($('total'))$('total').textContent=money5(st.cart.reduce((a,x)=>a+peso(x.p)*peso(x.q),0));
+    el.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const [i,d]=b.dataset.q.split(':');qty5(Number(i),Number(d));});
+  }
+  function renderPayment5(){document.querySelectorAll('.pay button').forEach(b=>b.classList.toggle('sel',b.textContent===st.pay));}
+  function refresh5(){renderSale5();renderCart5();renderPayment5();renderProductsAdmin5();renderNavOrganizer5();}
+  function add5(id){
+    const p=st.products.find(x=>Number(x.id)===Number(id)); if(!p||p.active===false)return;
+    let price=peso(p.p);
+    if(!price){const v=prompt('Valor del producto');price=peso(v);if(!price)return;p.p=price;save5();renderProductsAdmin5();}
+    const q=st.cart.find(x=>Number(x.id)===Number(id)); if(q){q.q++;q.p=price}else st.cart.push({id:p.id,n:p.n,p:price,cat:p.cat,q:1});
+    save5();renderCart5();
+  }
+  function qty5(i,d){if(!st.cart[i])return;st.cart[i].q+=d;if(st.cart[i].q<=0)st.cart.splice(i,1);save5();renderCart5();}
+  window.add5=add5;
+
+  /* --- Productos / categorías / orden --- */
+  function renderProductsAdmin5(){
+    const box=$('v4prodtable'); if(!box)return;
+    const selected=window._adminCat5||'Todas';
+    const ps=[...st.products].sort((a,b)=>a.order-b.order).filter(p=>selected==='Todas'||p.cat===selected);
+    box.innerHTML=`<div class="toolbar"><button type="button" class="btn dark" id="p65new">＋ Nuevo producto</button><button type="button" class="btn ghost" id="p65cat">＋ Categoría</button><select id="p65filter"><option value="Todas">Todas</option>${st.categories.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('')}</select></div><div class="small" style="margin:8px 0">Las flechas cambian el orden real de los productos y se conserva en Nueva venta.</div><table class="v4table"><thead><tr><th>#</th><th>Producto</th><th>Precio</th><th>Categoría</th><th>Estado</th><th>Orden</th><th>Acción</th></tr></thead><tbody>${ps.map((p,i)=>`<tr><td>${i+1}</td><td><b>${p.n}</b></td><td>${money5(p.p)}</td><td>${p.cat}</td><td>${p.active!==false?'Activo':'Inactivo'}</td><td><button type="button" class="btn ghost p65up" data-id="${p.id}" title="Subir">↑</button> <button type="button" class="btn ghost p65down" data-id="${p.id}" title="Bajar">↓</button></td><td><button type="button" class="btn ghost p65edit" data-id="${p.id}">Editar</button></td></tr>`).join('')}</tbody></table>`;
+    $('p65filter').onchange=e=>{window._adminCat5=e.target.value;renderProductsAdmin5()};
+    $('p65new').onclick=()=>editProduct5(null); $('p65cat').onclick=addCategory5;
+    box.querySelectorAll('.p65up').forEach(b=>b.onclick=()=>moveProduct5(Number(b.dataset.id),-1));
+    box.querySelectorAll('.p65down').forEach(b=>b.onclick=()=>moveProduct5(Number(b.dataset.id),1));
+    box.querySelectorAll('.p65edit').forEach(b=>b.onclick=()=>editProduct5(Number(b.dataset.id)));
+  }
+  function moveProduct5(id,dir){
+    const ps=[...st.products].sort((a,b)=>a.order-b.order);const i=ps.findIndex(p=>Number(p.id)===id),j=i+dir;if(i<0||j<0||j>=ps.length)return;
+    [ps[i],ps[j]]=[ps[j],ps[i]];ps.forEach((p,k)=>p.order=k);st.products=ps;save5();renderSale5();renderProductsAdmin5();
+  }
+  function addCategory5(){const n=prompt('Nombre de la categoría');if(!n)return;const name=n.trim();if(!name)return;if(!st.categories.includes(name))st.categories.push(name);save5();renderSale5();renderProductsAdmin5()}
+  function editProduct5(id){
+    const p=st.products.find(x=>Number(x.id)===id);const m=document.createElement('div');m.className='v4modal';
+    m.innerHTML=`<div><h2>${p?'Editar producto':'Nuevo producto'}</h2><div class="form"><div class="field"><label>Nombre</label><input id="e65n" value="${p?String(p.n).replace(/"/g,'&quot;'):''}"></div><div class="field"><label>Precio</label><input id="e65p" type="number" min="0" value="${p?p.p:0}"></div><div class="field"><label>Categoría</label><select id="e65c">${st.categories.map(c=>`<option value="${c}" ${p&&p.cat===c?'selected':''}>${c}</option>`).join('')}</select></div><div class="field"><label>Estado</label><select id="e65a"><option value="1" ${!p||p.active!==false?'selected':''}>Activo</option><option value="0" ${p&&p.active===false?'selected':''}>Inactivo</option></select></div></div><div class="toolbar"><button type="button" class="btn dark" id="e65save">Guardar</button><button type="button" class="btn ghost" id="e65cancel">Cancelar</button></div></div>`;
+    document.body.appendChild(m);$('e65cancel').onclick=()=>m.remove();$('e65save').onclick=()=>{const n=$('e65n').value.trim(),pr=peso($('e65p').value),cat=$('e65c').value,active=$('e65a').value==='1';if(!n)return alert('Escribe el nombre del producto.');if(p)Object.assign(p,{n,p:pr,cat,active});else st.products.push({id:Date.now(),n,p:pr,cat,active,order:st.products.length});st.products.sort((a,b)=>a.order-b.order).forEach((x,i)=>x.order=i);save5();m.remove();renderSale5();renderProductsAdmin5()};
+  }
+  window.v5move=moveProduct5; window.v5newCategory=addCategory5; window.v5newProduct=()=>editProduct5(null); window.v5editProduct=editProduct5;
+
+  /* --- Venta: nunca toca Caja/Nequi/Tarjeta como si fueran fondos de origen.
+         La venta entra al medio de pago; tarjeta va a pendiente. --- */
+  window.charge=function(){
+    const total=peso(st.cart.reduce((a,x)=>a+peso(x.p)*peso(x.q),0)); if(total<=0)return alert('Agrega productos.');
+    const cash=peso($('splitCash')?.value),nequi=peso($('splitNequi')?.value),card=peso($('splitCard')?.value);let parts={Efectivo:cash,Nequi:nequi,Tarjeta:card};let paid=cash+nequi+card;
+    if(paid===0){parts={Efectivo:0,Nequi:0,Tarjeta:0};parts[st.pay||'Efectivo']=total;paid=total;}
+    if(paid!==total)return alert(`Los pagos no coinciden con el total. Total: ${money5(total)} · Pagado: ${money5(paid)}`);
+    if(parts.Efectivo)st.funds.Caja+=parts.Efectivo;if(parts.Nequi)st.funds.Nequi+=parts.Nequi;if(parts.Tarjeta)st.pendingCard+=parts.Tarjeta;
+    const saleDate=$('saleDate')?.value||today5();st.movements.push({id:Date.now(),date:saleDate+'T12:00:00',type:'Venta',concept:'Venta',value:total,parts,items:JSON.parse(JSON.stringify(st.cart))});
+    st.cart=[];st.pay='Efectivo';['splitCash','splitNequi','splitCard'].forEach(id=>{if($(id))$(id).value=0});save5();
+    renderSale5();renderCart5();renderPayment5();renderProductsAdmin5();
+    alert('✓ VENTA REGISTRADA EXITOSAMENTE\n\nLa venta fue guardada en el histórico.\nEl POS quedó listo para realizar una nueva venta.');
+  };
+
+  /* --- Tarjeta: recibido + deducción se descuenta UNA sola vez del pendiente --- */
+  window.v4receiveCard=function(){
+    const pendiente=peso(st.pendingCard),recibido=peso($('v4creceived')?.value),ded=peso($('v4cdeduct')?.value),aplicado=recibido+ded;
+    if(aplicado<=0)return alert('Ingresa el valor recibido y/o las deducciones.');
+    if(aplicado>pendiente)return alert(`El recibido + deducciones (${money5(aplicado)}) supera el pendiente actual (${money5(pendiente)}).`);
+    st.pendingCard=pendiente-aplicado;st.funds.Tarjeta+=recibido;st.movements.push({id:Date.now(),date:( $('v4cdate')?.value||today5())+'T12:00:00',type:'Tarjeta recibida',concept:'Liquidación de tarjeta',value:recibido,received:recibido,deduction:ded,pendingApplied:aplicado,note:$('v4cnote')?.value||''});save5();
+    if($('v4creceived'))$('v4creceived').value='';if($('v4cdeduct'))$('v4cdeduct').value='';if($('v4cnote'))$('v4cnote').value='';
+    if($('v4pending'))$('v4pending').textContent=money5(st.pendingCard);if(typeof window.v4card==='function')try{window.v4card()}catch(e){}
+    alert(`Liquidación registrada. Pendiente restante: ${money5(st.pendingCard)}.`);
+  };
+  const rv=$('v4creceived'),dd=$('v4cdeduct'); if(rv&&dd&&!rv.dataset.v65){rv.dataset.v65='1';rv.addEventListener('input',()=>{dd.value=Math.max(0,peso(st.pendingCard)-peso(rv.value))})}
+
+  /* --- Orden de pestañas: controles visibles y funcionales --- */
+  function navButtons5(){return [...document.querySelectorAll('.nav > button[data-nav-id]')]}
+  function renderNavOrganizer5(){
+    const box=$('navOrganizer');if(!box)return;const btns=navButtons5();let order=Array.isArray(st.navOrder)?st.navOrder.slice():btns.map(b=>b.dataset.navId);order=order.filter(id=>btns.some(b=>b.dataset.navId===id));btns.forEach(b=>{if(!order.includes(b.dataset.navId))order.push(b.dataset.navId)});st.navOrder=order;save5();
+    box.innerHTML='<div class="small" style="margin-bottom:8px">Usa ↑ y ↓ para cambiar el orden de las pestañas.</div>'+order.map((id,i)=>{const b=btns.find(x=>x.dataset.navId===id);if(!b)return '';return `<div class="nav-item"><b>${b.textContent}</b><div class="nav-arrows"><button type="button" class="btn ghost" data-nav="${id}:−1" ${i===0?'disabled':''}>↑</button><button type="button" class="btn ghost" data-nav="${id}:1" ${i===order.length-1?'disabled':''}>↓</button></div></div>`}).join('');
+    box.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{const [id,d]=b.dataset.nav.split(':');moveNav5(id,Number(d))});
+  }
+  function moveNav5(id,dir){const btns=navButtons5();let order=[...(st.navOrder||btns.map(b=>b.dataset.navId))],i=order.indexOf(id),j=i+dir;if(i<0||j<0||j>=order.length)return;[order[i],order[j]]=[order[j],order[i]];st.navOrder=order;save5();order.forEach(x=>{const b=btns.find(y=>y.dataset.navId===x);if(b)document.querySelector('.nav').appendChild(b)});renderNavOrganizer5()}
+  window.moveNav=moveNav5;
+
+  /* CSS de botones y organizadores */
+  const style=document.createElement('style');style.textContent='.v65-cats{grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}.p65up,.p65down{min-width:36px;padding:6px 9px}.nav-item{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:6px;background:#fff}.nav-arrows{display:flex;gap:5px}.nav-arrows button:disabled{opacity:.35;cursor:not-allowed}';document.head.appendChild(style);
+
+  /* Reaplicar inmediatamente y después de que el navegador pinte. */
+  refresh5(); setTimeout(refresh5,50); setTimeout(refresh5,300);
+})();
+</script>
+</body>
+</html>

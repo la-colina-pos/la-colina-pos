@@ -1,0 +1,7 @@
+{
+  "version": "0.6.5",
+  "product": "La Colina POS",
+  "channel": "beta",
+  "entry": "index.html",
+  "notes": "Versión base para distribución y actualización centralizada. No contiene datos reales del negocio."
+}

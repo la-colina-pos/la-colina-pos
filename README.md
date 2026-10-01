@@ -1,16 +1,19 @@
-## Hi there 👋
+# La Colina POS
 
-<!--
-**la-colina-pos/la-colina-pos** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+Sistema POS y control operativo de La Colina.
 
-Here are some ideas to get you started:
+## Seguridad de datos
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+Este repositorio contiene únicamente archivos del programa y configuración de distribución.
+
+No debe contener:
+- ventas reales
+- gastos reales
+- compras reales
+- saldos o movimientos reales
+- inventario real
+- datos de clientes
+- archivos del Libro Maestro
+- credenciales, contraseñas, tokens o claves
+
+Los datos operativos del negocio deben permanecer almacenados localmente en la instalación del POS o, en el futuro, en un servicio de datos separado y protegido.

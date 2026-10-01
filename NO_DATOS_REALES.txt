@@ -1,0 +1,3 @@
+Este paquete está preparado para distribución del programa.
+No contiene información financiera ni operativa real de La Colina.
+Los saldos iniciales del código de distribución están en cero.
